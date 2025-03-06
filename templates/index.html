@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8" />
     <title>Dixon-Coles Maç Tahmini</title>
 </head>
 <body>
@@ -9,36 +9,75 @@
     
     <form method="POST" action="/">
         <label for="league">Lig:</label>
-        <select name="league" id="league">
-            <option value="Türkiye">Türkiye</option>
-            <option value="İngiltere">İngiltere</option>
-            <option value="Fransa">Fransa</option>
-            <option value="Almanya">Almanya</option>
-            <option value="İspanya">İspanya</option>
-            <option value="İtalya">İtalya</option>
+        <select name="league" id="league" onchange="updateTeams()">
+            <!-- Flask ile "league_data" dict geliyor. Seçenkeleri yazalım. -->
+            {% for lig in league_data.keys() %}
+                <option value="{{ lig }}">{{ lig }}</option>
+            {% endfor %}
         </select><br><br>
         
         <label for="home_team">Ev Sahibi Takım:</label>
-        <input type="text" name="home_team" /><br><br>
+        <!-- Bu select'i JavaScript ile dolduracağız -->
+        <select name="home_team" id="home_team"></select><br><br>
         
         <label for="away_team">Deplasman Takımı:</label>
-        <input type="text" name="away_team" /><br><br>
+        <select name="away_team" id="away_team"></select><br><br>
         
         <label for="rho">ρ Değeri:</label>
-        <input type="number" name="rho" step="0.01" value="-0.2"/><br><br>
+        <input type="number" name="rho" id="rho" step="0.01" value="-0.2"><br><br>
         
         <button type="submit">Tahmin Yap</button>
     </form>
     
-    <hr/>
+    <hr />
     {% if result_text %}
-        <h2>Sonuçlar:</h2>
+        <h2>Sonuçlar</h2>
         <pre>{{ result_text }}</pre>
     {% endif %}
     
     {% if plot_url %}
-        <h3>Isı Haritası:</h3>
+        <h3>Skor Olasılıkları (Isı Haritası)</h3>
         <img src="data:image/png;base64,{{ plot_url }}" alt="Plot" />
     {% endif %}
+    
+    <!-- JSON formatında lig->takımlar verisini gömüyoruz -->
+    <script>
+    var leagueToTeams = {{ league_data|tojson }};
+    
+    function updateTeams() {
+        var leagueSelect = document.getElementById("league");
+        var selectedLeague = leagueSelect.value;
+        
+        var homeSelect = document.getElementById("home_team");
+        var awaySelect = document.getElementById("away_team");
+        
+        // Mevcut içeriği temizle
+        homeSelect.innerHTML = "";
+        awaySelect.innerHTML = "";
+        
+        // Seçilen ligdeki takımları al
+        var teams = leagueToTeams[selectedLeague] || [];
+        
+        for (var i = 0; i < teams.length; i++) {
+            var t = teams[i];
+            
+            // Ev sahibi select
+            var opt1 = document.createElement("option");
+            opt1.value = t;
+            opt1.text = t;
+            homeSelect.appendChild(opt1);
+            
+            // Deplasman select
+            var opt2 = document.createElement("option");
+            opt2.value = t;
+            opt2.text = t;
+            awaySelect.appendChild(opt2);
+        }
+    }
+    
+    // Sayfa ilk açıldığında default ligi seçip takımları dolduralım
+    updateTeams();
+    </script>
+    
 </body>
 </html>
