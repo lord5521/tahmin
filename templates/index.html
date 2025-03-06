@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Dixon-Coles Maç Tahmini</title>
+</head>
+<body>
+    <h1>Dixon-Coles Maç Tahmini</h1>
+    
+    <form method="POST" action="/">
+        <label for="league">Lig:</label>
+        <select name="league" id="league">
+            <option value="Türkiye">Türkiye</option>
+            <option value="İngiltere">İngiltere</option>
+            <option value="Fransa">Fransa</option>
+            <option value="Almanya">Almanya</option>
+            <option value="İspanya">İspanya</option>
+            <option value="İtalya">İtalya</option>
+        </select><br><br>
+        
+        <label for="home_team">Ev Sahibi Takım:</label>
+        <input type="text" name="home_team" /><br><br>
+        
+        <label for="away_team">Deplasman Takımı:</label>
+        <input type="text" name="away_team" /><br><br>
+        
+        <label for="rho">ρ Değeri:</label>
+        <input type="number" name="rho" step="0.01" value="-0.2"/><br><br>
+        
+        <button type="submit">Tahmin Yap</button>
+    </form>
+    
+    <hr/>
+    {% if result_text %}
+        <h2>Sonuçlar:</h2>
+        <pre>{{ result_text }}</pre>
+    {% endif %}
+    
+    {% if plot_url %}
+        <h3>Isı Haritası:</h3>
+        <img src="data:image/png;base64,{{ plot_url }}" alt="Plot" />
+    {% endif %}
+</body>
+</html>
