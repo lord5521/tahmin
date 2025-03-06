@@ -1,83 +1,138 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8" />
-    <title>Dixon-Coles Maç Tahmini</title>
-</head>
-<body>
-    <h1>Dixon-Coles Maç Tahmini</h1>
-    
-    <form method="POST" action="/">
-        <label for="league">Lig:</label>
-        <select name="league" id="league" onchange="updateTeams()">
-            <!-- Flask ile "league_data" dict geliyor. Seçenkeleri yazalım. -->
-            {% for lig in league_data.keys() %}
-                <option value="{{ lig }}">{{ lig }}</option>
-            {% endfor %}
-        </select><br><br>
-        
-        <label for="home_team">Ev Sahibi Takım:</label>
-        <!-- Bu select'i JavaScript ile dolduracağız -->
-        <select name="home_team" id="home_team"></select><br><br>
-        
-        <label for="away_team">Deplasman Takımı:</label>
-        <select name="away_team" id="away_team"></select><br><br>
-        
-        <label for="rho">ρ Değeri:</label>
-        <input type="number" name="rho" id="rho" step="0.01" value="-0.2"><br><br>
-        
-        <button type="submit">Tahmin Yap</button>
-    </form>
-    
-    <hr />
-    {% if result_text %}
-        <h2>Sonuçlar</h2>
-        <pre>{{ result_text }}</pre>
-    {% endif %}
-    
-    {% if plot_url %}
-        <h3>Skor Olasılıkları (Isı Haritası)</h3>
-        <img src="data:image/png;base64,{{ plot_url }}" alt="Plot" />
-    {% endif %}
-    
-    <!-- JSON formatında lig->takımlar verisini gömüyoruz -->
-    <script>
-    var leagueToTeams = {{ league_data|tojson }};
-    
-    function updateTeams() {
-        var leagueSelect = document.getElementById("league");
-        var selectedLeague = leagueSelect.value;
-        
-        var homeSelect = document.getElementById("home_team");
-        var awaySelect = document.getElementById("away_team");
-        
-        // Mevcut içeriği temizle
-        homeSelect.innerHTML = "";
-        awaySelect.innerHTML = "";
-        
-        // Seçilen ligdeki takımları al
-        var teams = leagueToTeams[selectedLeague] || [];
-        
-        for (var i = 0; i < teams.length; i++) {
-            var t = teams[i];
-            
-            // Ev sahibi select
-            var opt1 = document.createElement("option");
-            opt1.value = t;
-            opt1.text = t;
-            homeSelect.appendChild(opt1);
-            
-            // Deplasman select
-            var opt2 = document.createElement("option");
-            opt2.value = t;
-            opt2.text = t;
-            awaySelect.appendChild(opt2);
-        }
+  <meta charset="UTF-8" />
+  <title>Dixon-Coles Maç Tahmini</title>
+  <!-- Bootstrap CSS -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+  <style>
+    .slider-value {
+      font-weight: bold;
+      margin-left: 8px;
     }
+    /* İsteğe göre ek CSS */
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container my-4">
+  <h1 class="mb-4">Dixon-Coles Maç Tahmini</h1>
+  
+  <!-- Form -->
+  <form method="POST" action="/">
     
-    // Sayfa ilk açıldığında default ligi seçip takımları dolduralım
-    updateTeams();
-    </script>
+    <!-- Lig Seçimi -->
+    <div class="mb-3">
+      <label for="league" class="form-label">Lig:</label>
+      <select name="league" id="league" class="form-select" onchange="updateTeams()">
+        {% for lig in league_data.keys() %}
+          <option value="{{ lig }}">{{ lig }}</option>
+        {% endfor %}
+      </select>
+    </div>
     
+    <!-- Ev Sahibi Takım -->
+    <div class="mb-3">
+      <label for="home_team" class="form-label">Ev Sahibi Takım:</label>
+      <select name="home_team" id="home_team" class="form-select"></select>
+    </div>
+    
+    <!-- Deplasman Takımı -->
+    <div class="mb-3">
+      <label for="away_team" class="form-label">Deplasman Takımı:</label>
+      <select name="away_team" id="away_team" class="form-select"></select>
+    </div>
+    
+    <!-- p Değeri: Slider + Görünen Değer -->
+    <div class="mb-3">
+      <label for="rhoSlider" class="form-label">p Değeri:</label>
+      <input
+        type="range"
+        id="rhoSlider"
+        min="-1"
+        max="1"
+        step="0.01"
+        value="-0.2"
+        oninput="updateRhoValue()"
+        class="form-range"
+      />
+      <span id="rhoValue" class="slider-value">-0.2</span>
+      
+      <!-- Asıl form verisi: bu hidden input'a slider değerini yazacağız -->
+      <input type="hidden" id="rhoInput" name="rho" value="-0.2" />
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Tahmin Yap</button>
+  </form>
+  
+  <hr />
+  
+  {% if result_text %}
+    <div class="mt-4">
+      <h2>Sonuçlar</h2>
+      <pre>{{ result_text }}</pre>
+    </div>
+  {% endif %}
+  
+  {% if plot_url %}
+    <div class="mt-4">
+      <h3>Skor Olasılıkları (Isı Haritası)</h3>
+      <img src="data:image/png;base64,{{ plot_url }}" alt="Plot" class="img-fluid" />
+    </div>
+  {% endif %}
+</div>
+
+<!-- JSON verisi: lig -> takımlar -->
+<script>
+  var leagueToTeams = {{ league_data|tojson }};
+  
+  function updateTeams() {
+    var leagueSelect = document.getElementById("league");
+    var selectedLeague = leagueSelect.value;
+    
+    var homeSelect = document.getElementById("home_team");
+    var awaySelect = document.getElementById("away_team");
+    
+    // Temizle
+    homeSelect.innerHTML = "";
+    awaySelect.innerHTML = "";
+    
+    var teams = leagueToTeams[selectedLeague] || [];
+    for (var i = 0; i < teams.length; i++) {
+      var t = teams[i];
+      
+      // Ev takım
+      var opt1 = document.createElement("option");
+      opt1.value = t;
+      opt1.text = t;
+      homeSelect.appendChild(opt1);
+      
+      // Deplasman takım
+      var opt2 = document.createElement("option");
+      opt2.value = t;
+      opt2.text = t;
+      awaySelect.appendChild(opt2);
+    }
+  }
+  
+  // sayfa ilk açıldığında takımları doldur
+  updateTeams();
+  
+  // Slider güncellendikçe p değeri gösterilsin ve hidden input'a yazılsın
+  function updateRhoValue() {
+    var slider = document.getElementById("rhoSlider");
+    var valSpan = document.getElementById("rhoValue");
+    var hiddenInput = document.getElementById("rhoInput");
+    
+    valSpan.textContent = slider.value;
+    hiddenInput.value = slider.value;
+  }
+</script>
+
+<!-- Bootstrap JS (opsiyonel) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
