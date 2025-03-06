@@ -1,33 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <title>Dixon-Coles Maç Tahmini</title>
-  <!-- Bootstrap CSS -->
+  
+  <!-- Bootstrap CSS (CDN veya kendi dosyanız) -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
   />
+
   <style>
-    .slider-value {
-      font-weight: bold;
-      margin-left: 8px;
+    /* Slider özelleştirmesi */
+    .slider-range {
+      /* Safari, iOS, eski Android */
+      -webkit-appearance: none; 
+      appearance: none;
+      height: 6px;           /* track yüksekliği */
+      border-radius: 3px;    /* track köşeleri */
+      background: #ddd;      /* track rengi */
+      outline: none;         /* odak çizgisi */
     }
-    /* İsteğe göre ek CSS */
+    .slider-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; 
+      height: 18px;
+      border-radius: 50%;
+      background: #007bff;   /* Mavi top */
+      cursor: pointer;
+      margin-top: -6px;      /* thumb'ı track ortalar */
+    }
+    
+    /* Firefox */
+    .slider-range::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #007bff;
+      cursor: pointer;
+    }
+    .slider-range::-moz-range-track {
+      height: 6px;
+      border-radius: 3px;
+      background: #ddd;
+    }
   </style>
 </head>
-<body class="bg-light">
 
+<body class="bg-light">
 <div class="container my-4">
   <h1 class="mb-4">Dixon-Coles Maç Tahmini</h1>
   
-  <!-- Form -->
   <form method="POST" action="/">
-    
     <!-- Lig Seçimi -->
     <div class="mb-3">
       <label for="league" class="form-label">Lig:</label>
       <select name="league" id="league" class="form-select" onchange="updateTeams()">
+        <!-- Flask ile "league_data" dict -->
         {% for lig in league_data.keys() %}
           <option value="{{ lig }}">{{ lig }}</option>
         {% endfor %}
@@ -46,9 +75,11 @@
       <select name="away_team" id="away_team" class="form-select"></select>
     </div>
     
-    <!-- p Değeri: Slider + Görünen Değer -->
+    <!-- p Değeri: Range Slider -->
     <div class="mb-3">
       <label for="rhoSlider" class="form-label">p Değeri:</label>
+      
+      <!-- Hem Bootstrap'ın "form-range" sınıfını hem de özel .slider-range ekliyoruz -->
       <input
         type="range"
         id="rhoSlider"
@@ -57,11 +88,11 @@
         step="0.01"
         value="-0.2"
         oninput="updateRhoValue()"
-        class="form-range"
+        class="form-range slider-range"
       />
-      <span id="rhoValue" class="slider-value">-0.2</span>
+      <span id="rhoValue" class="fw-bold ms-2">-0.2</span>
       
-      <!-- Asıl form verisi: bu hidden input'a slider değerini yazacağız -->
+      <!-- Gizli input (form'a gönderilecek gerçek değer) -->
       <input type="hidden" id="rhoInput" name="rho" value="-0.2" />
     </div>
     
@@ -85,8 +116,8 @@
   {% endif %}
 </div>
 
-<!-- JSON verisi: lig -> takımlar -->
 <script>
+  /* Lig -> Takım listesi sözlüğü (Flask'tan tojson ile gelir) */
   var leagueToTeams = {{ league_data|tojson }};
   
   function updateTeams() {
@@ -96,20 +127,17 @@
     var homeSelect = document.getElementById("home_team");
     var awaySelect = document.getElementById("away_team");
     
-    // Temizle
     homeSelect.innerHTML = "";
     awaySelect.innerHTML = "";
     
     var teams = leagueToTeams[selectedLeague] || [];
     for (var i = 0; i < teams.length; i++) {
       var t = teams[i];
-      
       // Ev takım
       var opt1 = document.createElement("option");
       opt1.value = t;
       opt1.text = t;
       homeSelect.appendChild(opt1);
-      
       // Deplasman takım
       var opt2 = document.createElement("option");
       opt2.value = t;
@@ -117,11 +145,10 @@
       awaySelect.appendChild(opt2);
     }
   }
-  
-  // sayfa ilk açıldığında takımları doldur
+  // Sayfa ilk açılınca takımları doldur
   updateTeams();
   
-  // Slider güncellendikçe p değeri gösterilsin ve hidden input'a yazılsın
+  /* Slider değeri değiştikçe ekranda göster, hidden input'u güncelle */
   function updateRhoValue() {
     var slider = document.getElementById("rhoSlider");
     var valSpan = document.getElementById("rhoValue");
